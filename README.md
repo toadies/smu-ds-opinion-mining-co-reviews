@@ -3,7 +3,9 @@
 
 To replicate results
 ```
-conda create env -f capstone.env.yml --force
+conda env create -f capstone.env.yml --force
+
+conda activate capstone
 ```
 
 Data wil need to be collected seperately from this github repository
