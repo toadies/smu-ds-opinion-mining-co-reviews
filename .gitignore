@@ -5,3 +5,4 @@ data/*
 .Rproj.user
 smu-ds-opinion-mining-co-reviews.Rproj
 .Rhistory
+.ipynb_checkpoints/*
