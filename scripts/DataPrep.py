@@ -25,6 +25,7 @@ stop_words = [
     ,"i"
     ,"ii"
     ,"iii"
+    ,'iv'
     ,"junior"
     ,"senior"
     ,"to"
@@ -37,6 +38,8 @@ stop_words = [
     ,"sr"
     ,"junior"
     ,"senior"
+    ,"lead"
+    ,"principal"
 ]
 
 translator = str.maketrans(string.punctuation, ' '*len(string.punctuation)) #map punctuation to space
@@ -46,7 +49,8 @@ def cleanTitle(title):
     title = title.lower()
     title_split = title.split(" ")
     for key, value in replacement_words.items():
-        title_split = [ value if key == word else word for word in title_split if word not in stop_words and len(word) > 2 ]
+        title_split = [ value if key == word else word for word in title_split ]
+        title_split = [ word for word in title_split if word not in stop_words and len(word) > 2 ]
     return " ".join(title_split)
 
 def detectLang(str):
