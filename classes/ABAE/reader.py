@@ -9,16 +9,13 @@ def is_number(token):
     return bool(num_regex.match(token))
 
 
-def create_vocab(domain, maxlen=0, vocab_size=0):
-    # assert domain in {'restaurant', 'beer'}
-    source = '../preprocessed_data/' + domain + '/train.txt'
+def create_vocab(corpus, vocab_path, maxlen=0, vocab_size=0):
 
     total_words, unique_words = 0, 0
     word_freqs = {}
     top = 0
 
-    fin = codecs.open(source, 'r', 'utf-8')
-    for line in fin:
+    for line in corpus:
         words = line.split()
         if maxlen > 0 and len(words) > maxlen:
             continue
@@ -46,7 +43,7 @@ def create_vocab(domain, maxlen=0, vocab_size=0):
         print ('  keep the top %i words' % vocab_size)
 
     # Write (vocab, frequence) to a txt file
-    vocab_file = codecs.open('../preprocessed_data/%s/vocab' % domain, mode='w', encoding='utf8')
+    vocab_file = codecs.open(vocab_path, mode='w', encoding='utf8')
     sorted_vocab = sorted(vocab.items(), key=operator.itemgetter(1))
     for word, index in sorted_vocab:
         if index < 3:
@@ -58,17 +55,12 @@ def create_vocab(domain, maxlen=0, vocab_size=0):
     return vocab
 
 
-def read_dataset(domain, phase, vocab, maxlen):
-    # assert domain in {'restaurant', 'beer'}
-    assert phase in {'train', 'test'}
-
-    source = '../preprocessed_data/' + domain + '/' + phase + '.txt'
+def read_dataset(corpus, vocab, maxlen):
     num_hit, unk_hit, total = 0., 0., 0.
     maxlen_x = 0
     data_x = []
 
-    fin = codecs.open(source, 'r', 'utf-8')
-    for line in fin:
+    for line in corpus:
         words = line.strip().split()
         if maxlen > 0 and len(words) > maxlen:
             words = words[:maxlen]
@@ -95,17 +87,14 @@ def read_dataset(domain, phase, vocab, maxlen):
     return data_x, maxlen_x
 
 
-def get_data(domain, vocab_size=0, maxlen=0):
-    print('Reading data from ' + domain)
+def get_data(corpus, vocab_path, vocab_size=0, maxlen=0):
     print(' Creating vocab ...')
-    vocab = create_vocab(domain, maxlen, vocab_size)
+    vocab = create_vocab(corpus, vocab_path, maxlen, vocab_size)
     print(' Reading dataset ...')
     print('  train set')
-    train_x, train_maxlen = read_dataset(domain, 'train', vocab, maxlen)
-    print('  test set')
-    test_x, test_maxlen = read_dataset(domain, 'test', vocab, maxlen)
-    maxlen = max(train_maxlen, test_maxlen)
-    return vocab, train_x, test_x, maxlen
+    train_x, train_maxlen = read_dataset(corpus, vocab, maxlen)
+    maxlen = train_maxlen
+    return vocab, train_x, maxlen
 
 
 if __name__ == "__main__":
