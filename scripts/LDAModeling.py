@@ -66,7 +66,7 @@ if __name__ == "__main__":
     min_topics = 3
     max_topics = 15
     step_size = 1
-    topics_range = range(min_topics, max_topics, step_size)
+    topics_range = range(max_topics, min_topics, -1)
     # Alpha parameter
     alpha = list(np.arange(0.01, 1, 0.3))
     alpha.append('symmetric')
