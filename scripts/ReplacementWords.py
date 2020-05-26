@@ -1,5 +1,6 @@
 replacement_words = {
     "manger":"manager",
+    "mangers":"manager",
     "supervisor":"manager",
     "bos":"manager",
     "boss":"manager",
@@ -9,6 +10,7 @@ replacement_words = {
     "managment":"management",
     "mgr":"manager",
     "superviser":"manager",
+    "mgt":"management",
     "enviroment":"environment",
     "enviornment":"environment",
     "enviorment":"environment",
