@@ -7,6 +7,7 @@ from tqdm import tqdm
 import multiprocessing as mp
 from multiprocessing import Pool
 from ReplacementWords import replacement_words
+from gensim.models import Word2Vec
 
 num_cpus = mp.cpu_count() - 1
 
@@ -105,21 +106,6 @@ def getStopWords():
     print("Stop word count", len(stop_words))
     return stop_words
 
-from gensim.test.utils import common_texts, get_tmpfile
-from gensim.models import Word2Vec
-from gensim.models.callbacks import CallbackAny2Vec
-
-class callback(CallbackAny2Vec):
-    '''Callback to print loss after each epoch.'''
-
-    def __init__(self):
-        self.epoch = 0
-
-    def on_epoch_end(self, model):
-        loss = model.get_latest_training_loss()
-        print('Loss after epoch {}: {}'.format(self.epoch, loss))
-        self.epoch += 1
-
 if __name__ == "__main__":
 
     print("Loading Data")
@@ -153,33 +139,20 @@ if __name__ == "__main__":
     with Pool(num_cpus) as p:
         tech_review_word_corpus = list(tqdm(p.imap(parseReview, zip(co_reviews,indices)), total=len(co_reviews)))
 
-# [1469, 1661, 1735, 2113, 2863, 7860, 8683, 8988, 9153, 9844, 10568, 12335, 12883, 12996, 13249, 14491, 14947, 15495, 15500, 18035, 19143, 19825, 20233, 21966, 22010, 22208, 22434, 22588, 22811, 23811, 23836, 25060, 25546, 26433, 27850, 28566, 28711, 28815, 30206, 30544, 30637, 31995, 34142, 34458, 35226, 35540, 35625, 37730, 38118, 38418, 40037, 41253, 41306, 41638, 43724, 43892, 44975]
-
     print("Original Review\n",[review for review, i in zip(co_reviews, indices) if i == 119065])
     print("Review Parse\n",[review for review in tech_review_word_corpus if review[0] == 119065])
     print("Sentence Parse\n",[review for review in tech_review_sent_corpus if review[0] == 119065])
 
     print("Save Files")
-    indices = tech_reviews["index"].tolist()
-    corpus = []
-    for review in tech_review_word_corpus:
-        corpus.append({
-            "index":review[0]
-            ,"review":review[1]
-        })
+
+    corpus = [ {"index":review[0],"review":review[0]} for review in tech_review_word_corpus ]
 
     with open("../data/tech_review_word_corpus.pkl","wb") as f:
         pickle.dump(corpus, f)
 
     print("Total Records for Review Corpus:", len(corpus))
 
-    corpus = []
-    for review in tech_review_sent_corpus:
-        for sent in review[1]:
-            corpus.append({
-                "index":review[0]
-                ,"review":sent
-            })
+    corpus = [ { "index":review[0] ,"review":sent } for review in tech_review_sent_corpus for sent in review[1]]
 
     with open("../data/tech_review_sent_corpus.pkl","wb") as f:
         pickle.dump(corpus, f)
