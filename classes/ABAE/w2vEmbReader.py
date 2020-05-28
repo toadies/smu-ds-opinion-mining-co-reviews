@@ -53,7 +53,7 @@ class W2VEmbReader:
 
     def get_aspect_matrix(self, n_clusters=0):
         self.aspect_size = n_clusters
-        km = KMeans(n_clusters=n_clusters)
+        km = KMeans(n_clusters=n_clusters, random_state = 76244)
         km.fit(self.emb_matrix)
         km_aspects = km.cluster_centers_
         aspects = km_aspects

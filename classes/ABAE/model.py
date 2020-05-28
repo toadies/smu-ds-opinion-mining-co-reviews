@@ -1,39 +1,51 @@
 import logging
 import os
+import sys
+
+src_path = os.path.join(os.path.dirname(__file__))
+sys.path.append(src_path)
+
+from numpy.random import seed
+import tensorflow
+seed(76244)
+tensorflow.random.set_seed(76244)
+
 import keras.backend as K
 from keras.layers import Dense, Activation, Embedding, Input
 from keras.models import Model
 from keras.constraints import MaxNorm
 
 from my_layers import Attention, Average, WeightedSum, WeightedAspectEmb, MaxMargin
+from w2vEmbReader import W2VEmbReader as EmbReader
+
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
+def create_model(overall_maxlen, vocab, aspect_size, neg_size, emb_filename, ortho_reg_default):
 
-def create_model(args, maxlen, vocab):
     def ortho_reg(weight_matrix):
         ### orthogonal regularization for aspect embedding matrix ###
         w_n = K.l2_normalize(weight_matrix, axis=-1)
         reg = K.sum(K.square(K.dot(w_n, K.transpose(w_n)) - K.eye(w_n.shape[0])))
-        return args.ortho_reg * reg
+        return ortho_reg_default * reg
+    
+    
+    # ##### Inputs #####
+    sentence_input = Input(shape=(overall_maxlen,), dtype='int32', name='sentence_input')
+    neg_input = Input(shape=(neg_size, overall_maxlen), dtype='int32', name='neg_input')
 
     vocab_size = len(vocab)
+    
+    emb_reader = EmbReader(emb_filename)
 
-    if args.emb_name:
-        from w2vEmbReader import W2VEmbReader as EmbReader
-        emb_reader = EmbReader(os.path.join("..", "preprocessed_data", args.domain), args.emb_name)
-        aspect_matrix = emb_reader.get_aspect_matrix(args.aspect_size)
-        args.aspect_size = emb_reader.aspect_size
-        args.emb_dim = emb_reader.emb_dim
-
-    ##### Inputs #####
-    sentence_input = Input(shape=(maxlen,), dtype='int32', name='sentence_input')
-    neg_input = Input(shape=(args.neg_size, maxlen), dtype='int32', name='neg_input')
-
-    ##### Construct word embedding layer #####
-    word_emb = Embedding(vocab_size, args.emb_dim,
+    aspect_matrix = emb_reader.get_aspect_matrix(aspect_size)
+    aspect_size = emb_reader.aspect_size
+    emb_dim = emb_reader.emb_dim
+    
+    # ##### Construct word embedding layer #####
+    word_emb = Embedding(vocab_size, emb_dim,
                          mask_zero=True, name='word_emb',
                          embeddings_constraint=MaxNorm(10))
 
@@ -50,9 +62,9 @@ def create_model(args, maxlen, vocab):
     z_n = Average()(e_neg)
 
     ##### Reconstruction #####
-    p_t = Dense(args.aspect_size)(z_s)
+    p_t = Dense(aspect_size)(z_s)
     p_t = Activation('softmax', name='p_t')(p_t)
-    r_s = WeightedAspectEmb(args.aspect_size, args.emb_dim, name='aspect_emb',
+    r_s = WeightedAspectEmb(aspect_size, emb_dim, name='aspect_emb',
                             W_constraint=MaxNorm(10),
                             W_regularizer=ortho_reg)(p_t)
 
@@ -61,12 +73,10 @@ def create_model(args, maxlen, vocab):
     model = Model(inputs=[sentence_input, neg_input], outputs=[loss])
 
     ### Word embedding and aspect embedding initialization ######
-    if args.emb_name:
-        from w2vEmbReader import W2VEmbReader as EmbReader
-        logger.info('Initializing word embedding matrix')
-        embs = model.get_layer('word_emb').embeddings
-        K.set_value(embs, emb_reader.get_emb_matrix_given_vocab(vocab, K.get_value(embs)))
-        logger.info('Initializing aspect embedding matrix as centroid of kmean clusters')
-        K.set_value(model.get_layer('aspect_emb').W, aspect_matrix)
+    print('Initializing word embedding matrix')
+    embs = model.get_layer('word_emb').embeddings
+    K.set_value(embs, emb_reader.get_emb_matrix_given_vocab(vocab, K.get_value(embs)))
+    print('Initializing aspect embedding matrix as centroid of kmean clusters')
+    K.set_value(model.get_layer('aspect_emb').W, aspect_matrix)
 
     return model

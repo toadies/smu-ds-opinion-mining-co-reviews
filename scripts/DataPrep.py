@@ -50,7 +50,8 @@ def cleanTitle(title):
     title_split = title.split(" ")
     for key, value in replacement_words.items():
         title_split = [ value if key == word else word for word in title_split ]
-        title_split = [ word for word in title_split if word not in stop_words and len(word) > 2 ]
+    
+    title_split = [ word for word in title_split if word not in stop_words and len(word) > 2 ]
     return " ".join(title_split)
 
 def detectLang(str):
