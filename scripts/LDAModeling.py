@@ -54,27 +54,37 @@ if __name__ == "__main__":
                     })
 
     print("Total parameter values to train", len(parameters))     
-    for param in tqdm(parameters):    
-        lda = LatentDirichletAllocation(
-            learning_method="batch", 
-            random_state=100,
-            n_components=param["k"],
-            doc_topic_prior = param["alpha"],
-            topic_word_prior = param["beta"],
-            n_jobs = -1
-        )
-        
-        lda.fit(X)    
-        
-        aspect = {}
-        for idx, topic in enumerate(lda.components_):
-            aspect['Aspect {0}'.format(str(idx))] = {vectorizer.get_feature_names()[i]:topic[i] 
-                                        for i in topic.argsort()[:-100 - 1:-1]}
-        
-        aspect_file_name = "results/lda-aspect-a-{0}-b-{1}-k-{2}.json".format(
-            str(param["alpha"])[:4],
-            str(param["beta"])[:4],
-            str(param["k"])[:4])
 
-        with open(os.path.join(project_path,aspect_file_name), "w") as f:
-            json.dump(aspect, f)
+    for param in tqdm(parameters): 
+        aspect_file_name = "results/lda-aspect-k-{0}-a-{1}-b-{2}.json".format(
+                                str(param["k"])[:4],
+                                str(param["alpha"])[:4],
+                                str(param["beta"])[:4]
+                            )
+        
+        if not os.path.isfile(os.path.join(project_path,aspect_file_name)):
+            lda = LatentDirichletAllocation(
+                learning_method="batch", 
+                random_state=100,
+                n_components=param["k"],
+                doc_topic_prior = param["alpha"],
+                topic_word_prior = param["beta"],
+                n_jobs = -2
+            )
+            
+            lda.fit(X)    
+            
+            aspect = {}
+            for idx, topic in enumerate(lda.components_):
+                aspect['Aspect {0}'.format(str(idx))] = {vectorizer.get_feature_names()[i]:topic[i] 
+                                            for i in topic.argsort()[:-100 - 1:-1]}
+            
+            aspect_file_name = "results/lda-aspect-a-{0}-b-{1}-k-{2}.json".format(
+                str(param["alpha"])[:4],
+                str(param["beta"])[:4],
+                str(param["k"])[:4])
+
+            with open(os.path.join(project_path,aspect_file_name), "w") as f:
+                json.dump(aspect, f)
+
+    print("Done!")
