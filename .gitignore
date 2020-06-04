@@ -1,9 +1,10 @@
 *.pptx
 *.docx
 *.env
-data/*
 .Rproj.user
 smu-ds-opinion-mining-co-reviews.Rproj
 .Rhistory
-**/.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/*
 .DS_Store
+*/.ipynb_checkpoints/*
+**/*.pyc
