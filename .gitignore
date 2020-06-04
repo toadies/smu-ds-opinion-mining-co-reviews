@@ -6,5 +6,5 @@ smu-ds-opinion-mining-co-reviews.Rproj
 .Rhistory
 notebooks/.ipynb_checkpoints/*
 .DS_Store
-*/.ipynb_checkpoints/*
+**/.ipynb_checkpoints
 **/*.pyc
