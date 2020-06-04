@@ -3,77 +3,45 @@ import numpy as np
 import pickle
 from multiprocessing import Pool
 from tqdm import tqdm
-from spacy.lang.en import English
-import gensim.corpora as corpora
-from gensim.models import LdaMulticore
-from gensim.models import CoherenceModel
 import multiprocessing as mp
+import sys
+import os
+project_path = os.path.join(os.path.dirname(__file__),"..")
+num_cpus = mp.cpu_count()
 
-num_cpus = mp.cpu_count() - 1
+from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.feature_extraction.text import CountVectorizer
+import json
 
-parser = English()
-
-with open("../data/tech_review_sent_corpus.pkl","rb") as f:
-    tech_review_corpus = pickle.load(f)
-    
-reviews = pd.DataFrame(tech_review_corpus).review.tolist()
-
-def tokenize(text):
-    lda_tokens = []
-    tokens = parser(text)
-    for token in tokens:
-        if token.orth_.isspace():
-            continue
-        else:
-            lda_tokens.append(token.lower_)
-    return lda_tokens
-
-def compute_coherence_values(param):
-    lda_model = LdaMulticore(corpus=corpus,
-                                           id2word=id2word,
-                                           num_topics=param["k"], 
-                                           random_state=100,
-                                           chunksize=100,
-                                           workers = num_cpus,
-                                           passes=10,
-                                           alpha=param["alpha"],
-                                           eta=param["beta"],
-                                           per_word_topics=True)
-    
-    coherence_model_lda = CoherenceModel(model=lda_model, texts=processed_docs, dictionary=id2word, coherence='c_v')
-    
-    param["coherence"] = coherence_model_lda.get_coherence()
-
-    return param
+def tokenize(doc):
+    tokens = doc.split(" ")
+    tokens = [ word for word in tokens if len(word.strip()) > 0 ]
+    return tokens
 
 if __name__ == "__main__":
+
+    print("Loading tech corpus")
+    with open(os.path.join(project_path,"data/tech_review_sent_corpus.pkl"),"rb") as f:
+        tech_review_corpus = pickle.load(f)
+    reviews = pd.DataFrame(tech_review_corpus).review.tolist()
 
     print("Total workers:", num_cpus)
 
     print("Tokenize the corpus")
-    with Pool() as p:
-        processed_docs = list(tqdm(p.imap(tokenize, reviews), total=len(reviews)))
+    vectorizer = CountVectorizer(min_df=3, max_df = .90, tokenizer = tokenize, ngram_range = (1,2) )
+    X = vectorizer.fit_transform(reviews)
+    print("Total Vocab Size", len(vectorizer.vocabulary_))
 
-    # Create Dictionary
-    id2word = corpora.Dictionary(processed_docs)
-    # Term Document Frequency
-    print("Create a Dictionary")
-    corpus = [id2word.doc2bow(text) for i, text in tqdm(enumerate(processed_docs), total=len(processed_docs))]
+    sum_words = X.sum(axis=0)
+    words_freq = [(word, sum_words[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
+    print( sorted(words_freq, key = lambda x: x[1], reverse = True)[:50] )
 
-    grid = {}
-    grid['Validation_Set'] = {}
-    # Topics range
-    min_topics = 3
-    max_topics = 15
-    step_size = 1
-    topics_range = range(max_topics, min_topics, -1)
-    # Alpha parameter
+
+    topics_range = range(15, 6, -1)
     alpha = list(np.arange(0.01, 1, 0.3))
-    alpha.append('symmetric')
-    alpha.append('asymmetric')
-    # Beta parameter
+    alpha.append(None)
     beta = list(np.arange(0.01, 1, 0.3))
-    beta.append('symmetric')
+    beta.append(None)
 
     parameters = []
     for k in topics_range:
@@ -83,13 +51,30 @@ if __name__ == "__main__":
                         "k":k
                         ,"alpha":a
                         ,"beta":b
-                        ,"workers":4
                     })
 
-    print("Running modeling")
-    print("Total Paramters", len(parameters))
+    print("Total parameter values to train", len(parameters))     
+    for param in tqdm(parameters):    
+        lda = LatentDirichletAllocation(
+            learning_method="batch", 
+            random_state=100,
+            n_components=param["k"],
+            doc_topic_prior = param["alpha"],
+            topic_word_prior = param["beta"],
+            n_jobs = -1
+        )
+        
+        lda.fit(X)    
+        
+        aspect = {}
+        for idx, topic in enumerate(lda.components_):
+            aspect['Aspect {0}'.format(str(idx))] = {vectorizer.get_feature_names()[i]:topic[i] 
+                                        for i in topic.argsort()[:-100 - 1:-1]}
+        
+        aspect_file_name = "results/lda-aspect-a-{0}-b-{1}-k-{2}.json".format(
+            str(param["alpha"])[:4],
+            str(param["beta"])[:4],
+            str(param["k"])[:4])
 
-    results = list(map(compute_coherence_values, tqdm(parameters[:20])))
-
-    df = pd.DataFrame(results).to_csv("../data/lda_modeling.csv",index = False)
-
+        with open(os.path.join(project_path,aspect_file_name), "w") as f:
+            json.dump(aspect, f)
