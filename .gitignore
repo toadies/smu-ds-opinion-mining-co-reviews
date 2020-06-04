@@ -5,5 +5,5 @@
 smu-ds-opinion-mining-co-reviews.Rproj
 .Rhistory
 .DS_Store
-**/*.pyc
+*.pyc
 .ipynb_checkpoints
