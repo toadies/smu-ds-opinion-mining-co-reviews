@@ -8,15 +8,19 @@ import multiprocessing as mp
 from multiprocessing import Pool
 from ReplacementWords import replacement_words
 from gensim.models import Word2Vec
+import json
+import os
+import logging
+
+
+project_path = os.path.join(os.path.dirname(__file__),"..")
 
 num_cpus = mp.cpu_count() - 1
 
-with open("../data/all_reviews.pkl","rb") as f:
+with open(os.path.join(project_path,"data/all_reviews.pkl"),"rb") as f:
     all_reviews = pickle.load(f)
     
-job_filter = pd.read_csv("../data/filter_job_titles.csv")
-
-job_filters = job_filter.clean_job_title.tolist()
+job_filter = pd.read_csv(os.path.join(project_path,"data/filter_job_titles.csv"))
 
 replacementWords = replacement_words
 
@@ -38,6 +42,7 @@ websites = "[.](com|net|org|io|gov)"
 def split_into_sentences(text):
     text = " " + text + "  "
     text = text.replace("\n"," ")
+    text = text.replace("\r"," ")
     text = re.sub(prefixes,"\\1<prd>",text)
     text = re.sub(websites,"<prd>\\1",text)
     if "Ph.D" in text: text = text.replace("Ph.D.","Ph<prd>D<prd>")
@@ -70,9 +75,10 @@ def parseSentence(args):
     sent_tokens = split_into_sentences(line.lower())
     for sent in sent_tokens:
         text_token = re.split(r"\W+",sent)
-        text_rmstop = [lmtzr.lemmatize(word) for word in text_token if word not in stop_words]
-        text_replacments = [ replaceWord(word) for word in text_rmstop]
-        result.append(' '.join(text_replacments).strip())
+        # text_rmstop = [lmtzr.lemmatize(word) for word in text_token if word not in stop_words]
+        text_replacments = [ replaceWord(word) for word in text_token]
+        if len(text_replacments) > 0: # Don't append if missing words
+            result.append(' '.join(text_replacments).strip())
     return i, result
 
 def parseReview(args):
@@ -82,9 +88,9 @@ def parseReview(args):
     text_token = CountVectorizer().build_tokenizer()(line.lower())
     text_stem = [lmtzr.lemmatize(w) for w in text_token]
     text_replacments = [replaceWord(word) for word in text_stem]
-    text_rmstop = [i for i in text_replacments if i not in stop_words]
+    # text_rmstop = [i for i in text_replacments if i not in stop_words]
 
-    return i, " ".join(text_rmstop)
+    return i, " ".join(text_replacments)
 
 def getStopWords():
     #Create Stop Words
@@ -96,6 +102,7 @@ def getStopWords():
 
     stop_words = stopwords.words('english')
 
+    stop_words = []
     for token in tokens:
         stop_words.extend(token[0:1])
         
@@ -107,14 +114,9 @@ def getStopWords():
     return stop_words
 
 if __name__ == "__main__":
-
-    print("Loading Data")
-    with open("../data/all_reviews.pkl","rb") as f:
-        all_reviews = pickle.load(f)
-        
-    all_reviews = all_reviews.reset_index()
-
-    job_filter = pd.read_csv("../data/filter_job_titles.csv")
+    logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
 
     job_filters = job_filter.clean_job_title.tolist()
 
@@ -124,18 +126,18 @@ if __name__ == "__main__":
     idx = (all_reviews_en.clean_job_title.isin(job_filters))
     tech_reviews = all_reviews_en.loc[idx,:].reset_index()
 
-    print("Total Rows in Corpus", tech_reviews.shape)
+    logger.info("Total Rows in Corpus: {0}".format(str(tech_reviews.shape)))
 
-    print("Get Stop Words")
-    stop_words = getStopWords()
+    # print("Get Stop Words")
+    # stop_words = getStopWords()
 
     indices = tech_reviews["index"].tolist()
     co_reviews = tech_reviews.review.tolist()
-    print("Parse Sentences")
+    logger.info("Parse Sentences")
     with Pool(num_cpus) as p:
         tech_review_sent_corpus = list(tqdm(p.imap(parseSentence, zip(co_reviews,indices)), total=len(co_reviews)))
 
-    print("Review Parse")
+    logger.info("Review Parse")
     with Pool(num_cpus) as p:
         tech_review_word_corpus = list(tqdm(p.imap(parseReview, zip(co_reviews,indices)), total=len(co_reviews)))
 
@@ -143,30 +145,30 @@ if __name__ == "__main__":
     print("Review Parse\n",[review for review in tech_review_word_corpus if review[0] == 119065])
     print("Sentence Parse\n",[review for review in tech_review_sent_corpus if review[0] == 119065])
 
-    print("Save Files")
+    logger.info("Save Files")
 
     corpus = [ {"index":review[0],"review":review[0]} for review in tech_review_word_corpus ]
 
-    with open("../data/tech_review_word_corpus.pkl","wb") as f:
+    with open(os.path.join(project_path,"data/tech_review_word_corpus.pkl"),"wb") as f:
         pickle.dump(corpus, f)
 
-    print("Total Records for Review Corpus:", len(corpus))
+    logger.info("Total Records for Review Corpus: {0}".format(str(len(corpus))))
 
-    corpus = [ { "index":review[0] ,"review":sent } for review in tech_review_sent_corpus for sent in review[1]]
+    corpus = [ { "index":review[0] ,"review":sent } for review in tech_review_sent_corpus for sent in review[1] ]
 
-    with open("../data/tech_review_sent_corpus.pkl","wb") as f:
+    with open(os.path.join(project_path,"data/tech_review_sent_corpus.pkl"),"wb") as f:
         pickle.dump(corpus, f)
 
-    print("Total Records for Review Corpus:", len(corpus))
+    logger.info("Total Records for Review Corpus: {0}".format(str(len(corpus))))
 
-    print("Create a Pretrained W2V Model")
-    print("Parse Sentences")
+    logger.info("Create a Pretrained W2V Model")
+    logger.info("Parse Sentences")
     all_co_reviews = all_reviews_en.review.tolist()
 
     with Pool() as p:
         all_review_sent_corpus = list(tqdm(p.imap(parseSentence, zip(all_co_reviews,range(len(all_co_reviews)))), total=len(all_co_reviews)))
 
-    print("Train Model (can take awhile!)")
+    logger.info("Train Model (can take awhile!)")
     sentences = [item.split() for sublist in all_review_sent_corpus for item in sublist[1]]
     model = Word2Vec(sentences, size=200, window=10, min_count=5, workers=num_cpus)
-    model.save("../models/w2v_embedding")
+    model.save(os.path.join(project_path,"models/w2v_embedding"))

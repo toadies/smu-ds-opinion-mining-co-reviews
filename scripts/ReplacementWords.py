@@ -155,7 +155,6 @@ replacement_words = {
 "freindly" : "friendly", #0.9666666666666666
 "geat" : "great", #0.94
 "generosity" : "generous", #0.915
-"generous" : "generosity", #0.915
 "goo" : "good", #0.9416666666666667
 "goood" : "good", #0.9533333333333333
 "grate" : "great", #0.9022222222222223
@@ -338,6 +337,7 @@ replacement_words = {
 "develops" : "development", #0.9022727272727272
 "dnt" : "dont", #0.9249999999999999
 "dosent" : "doesnt", #0.9555555555555555
+"doesnot" : "doesnt",
 "employes" : "employee", #0.95
 "engagement" : "engage", #0.92
 "enjoying" : "enjoy", #0.925
@@ -443,4 +443,6 @@ replacement_words = {
 "utilized" : "utilize", #0.975
 "wanting" : "want", #0.9142857142857141
 "yelling" : "yell", #0.9142857142857141
+"gr8" : "great",
+
 }

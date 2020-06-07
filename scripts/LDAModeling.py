@@ -6,6 +6,8 @@ from tqdm import tqdm
 import multiprocessing as mp
 import sys
 import os
+from PreProcess import getStopWords
+
 project_path = os.path.join(os.path.dirname(__file__),"..")
 num_cpus = mp.cpu_count()
 
@@ -28,14 +30,16 @@ if __name__ == "__main__":
     print("Total workers:", num_cpus)
 
     print("Tokenize the corpus")
-    vectorizer = CountVectorizer(min_df=3, max_df = .90, tokenizer = tokenize, ngram_range = (1,2) )
+
+    stop_words = getStopWords()
+
+    vectorizer = CountVectorizer(min_df=3, max_df = .90, tokenizer = tokenize, stop_words = stop_words, ngram_range = (1,2) )
     X = vectorizer.fit_transform(reviews)
     print("Total Vocab Size", len(vectorizer.vocabulary_))
 
     sum_words = X.sum(axis=0)
     words_freq = [(word, sum_words[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
     print( sorted(words_freq, key = lambda x: x[1], reverse = True)[:50] )
-
 
     topics_range = range(15, 6, -1)
     alpha = list(np.arange(0.01, 1, 0.3))
@@ -56,7 +60,7 @@ if __name__ == "__main__":
     print("Total parameter values to train", len(parameters))     
 
     for param in tqdm(parameters): 
-        aspect_file_name = "results/lda-aspect-k-{0}-a-{1}-b-{2}.json".format(
+        aspect_file_name = "results/LDA/lda-aspect-k-{0}-a-{1}-b-{2}.json".format(
                                 str(param["k"])[:4],
                                 str(param["alpha"])[:4],
                                 str(param["beta"])[:4]
