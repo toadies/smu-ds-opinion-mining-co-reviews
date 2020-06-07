@@ -60,6 +60,8 @@ def read_dataset(corpus, vocab, maxlen):
     maxlen_x = 0
     data_x = []
 
+    print("Corpus Size", len(corpus))
+    x = 0
     for line in corpus:
         words = line.strip().split()
         if maxlen > 0 and len(words) > maxlen:
@@ -82,8 +84,10 @@ def read_dataset(corpus, vocab, maxlen):
         data_x.append(indices)
         if maxlen_x < len(indices):
             maxlen_x = len(indices)
+        x += 1
 
-    print('   <num> hit rate: %.2f%%, <unk> hit rate: %.2f%%' % (100 * num_hit / total, 100 * unk_hit / total))
+    print("Total Document Analyzed", x)
+    print('<num> hit rate: %.2f%%, <unk> hit rate: %.2f%%' % (100 * num_hit / total, 100 * unk_hit / total))
     return data_x, maxlen_x
 
 

@@ -7,6 +7,7 @@ sys.path.append(src_path)
 
 from numpy.random import seed
 import tensorflow
+
 seed(76244)
 tensorflow.random.set_seed(76244)
 
@@ -18,12 +19,10 @@ from keras.constraints import MaxNorm
 from my_layers import Attention, Average, WeightedSum, WeightedAspectEmb, MaxMargin
 from w2vEmbReader import W2VEmbReader as EmbReader
 
-
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(levelname)s %(message)s')
+logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
-def create_model(overall_maxlen, vocab, aspect_size, neg_size, emb_filename, ortho_reg_default):
+def create_model(overall_maxlen, vocab, aspect_size, neg_size, emb_reader, ortho_reg_default):
 
     def ortho_reg(weight_matrix):
         ### orthogonal regularization for aspect embedding matrix ###
@@ -31,20 +30,16 @@ def create_model(overall_maxlen, vocab, aspect_size, neg_size, emb_filename, ort
         reg = K.sum(K.square(K.dot(w_n, K.transpose(w_n)) - K.eye(w_n.shape[0])))
         return ortho_reg_default * reg
     
-    
     # ##### Inputs #####
     sentence_input = Input(shape=(overall_maxlen,), dtype='int32', name='sentence_input')
     neg_input = Input(shape=(neg_size, overall_maxlen), dtype='int32', name='neg_input')
-
-    vocab_size = len(vocab)
-    
-    emb_reader = EmbReader(emb_filename)
 
     aspect_matrix = emb_reader.get_aspect_matrix(aspect_size)
     aspect_size = emb_reader.aspect_size
     emb_dim = emb_reader.emb_dim
     
     # ##### Construct word embedding layer #####
+    vocab_size = len(vocab)
     word_emb = Embedding(vocab_size, emb_dim,
                          mask_zero=True, name='word_emb',
                          embeddings_constraint=MaxNorm(10))
