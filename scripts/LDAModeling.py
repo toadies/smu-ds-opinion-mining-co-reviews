@@ -6,7 +6,6 @@ from tqdm import tqdm
 import multiprocessing as mp
 import sys
 import os
-from PreProcess import getStopWords
 
 project_path = os.path.join(os.path.dirname(__file__),"..")
 num_cpus = mp.cpu_count()
@@ -31,7 +30,8 @@ if __name__ == "__main__":
 
     print("Tokenize the corpus")
 
-    stop_words = getStopWords()
+    with open(os.path.join(project_path, "data/stop_words.json"), "r") as f:
+        stop_words = json.load(f)
 
     vectorizer = CountVectorizer(min_df=3, max_df = .90, tokenizer = tokenize, stop_words = stop_words, ngram_range = (1,2) )
     X = vectorizer.fit_transform(reviews)

@@ -92,7 +92,7 @@ def parseReview(args):
 
     return i, " ".join(text_replacments)
 
-def getStopWords():
+def createStopWords():
     #Create Stop Words
     company_name = all_reviews_en.company_name
     company_name = list(set(company_name))
@@ -101,8 +101,7 @@ def getStopWords():
     tokens = map(str.split, tokens)
 
     stop_words = stopwords.words('english')
-
-    stop_words = []
+    logger.info("Initial Stop Word Count: {0}".format(len(stop_words)))
     for token in tokens:
         stop_words.extend(token[0:1])
         
@@ -110,7 +109,11 @@ def getStopWords():
     stop_words = [x for x in stop_words if x not in ['management','performance','measurement']]
 
     stop_words.extend(["saas","inc","company","chrysler","packard","capegemini"])
-    print("Stop word count", len(stop_words))
+    logger.info("Stop Word Count: {0}".format(len(stop_words)))
+
+    with open(os.path.join(project_path,"data/stop_words.json"), "w") as f:
+        json.dump(stop_words, f)
+
     return stop_words
 
 if __name__ == "__main__":
@@ -128,47 +131,47 @@ if __name__ == "__main__":
 
     logger.info("Total Rows in Corpus: {0}".format(str(tech_reviews.shape)))
 
-    # print("Get Stop Words")
-    # stop_words = getStopWords()
+    print("Create Stop Words")
+    stop_words = createStopWords()
 
-    indices = tech_reviews["index"].tolist()
-    co_reviews = tech_reviews.review.tolist()
-    logger.info("Parse Sentences")
-    with Pool(num_cpus) as p:
-        tech_review_sent_corpus = list(tqdm(p.imap(parseSentence, zip(co_reviews,indices)), total=len(co_reviews)))
+    # indices = tech_reviews["index"].tolist()
+    # co_reviews = tech_reviews.review.tolist()
+    # logger.info("Parse Sentences")
+    # with Pool(num_cpus) as p:
+    #     tech_review_sent_corpus = list(tqdm(p.imap(parseSentence, zip(co_reviews,indices)), total=len(co_reviews)))
 
-    logger.info("Review Parse")
-    with Pool(num_cpus) as p:
-        tech_review_word_corpus = list(tqdm(p.imap(parseReview, zip(co_reviews,indices)), total=len(co_reviews)))
+    # logger.info("Review Parse")
+    # with Pool(num_cpus) as p:
+    #     tech_review_word_corpus = list(tqdm(p.imap(parseReview, zip(co_reviews,indices)), total=len(co_reviews)))
 
-    print("Original Review\n",[review for review, i in zip(co_reviews, indices) if i == 119065])
-    print("Review Parse\n",[review for review in tech_review_word_corpus if review[0] == 119065])
-    print("Sentence Parse\n",[review for review in tech_review_sent_corpus if review[0] == 119065])
+    # print("Original Review\n",[review for review, i in zip(co_reviews, indices) if i == 119065])
+    # print("Review Parse\n",[review for review in tech_review_word_corpus if review[0] == 119065])
+    # print("Sentence Parse\n",[review for review in tech_review_sent_corpus if review[0] == 119065])
 
-    logger.info("Save Files")
+    # logger.info("Save Files")
 
-    corpus = [ {"index":review[0],"review":review[0]} for review in tech_review_word_corpus ]
+    # corpus = [ {"index":review[0],"review":review[0]} for review in tech_review_word_corpus ]
 
-    with open(os.path.join(project_path,"data/tech_review_word_corpus.pkl"),"wb") as f:
-        pickle.dump(corpus, f)
+    # with open(os.path.join(project_path,"data/tech_review_word_corpus.pkl"),"wb") as f:
+    #     pickle.dump(corpus, f)
 
-    logger.info("Total Records for Review Corpus: {0}".format(str(len(corpus))))
+    # logger.info("Total Records for Review Corpus: {0}".format(str(len(corpus))))
 
-    corpus = [ { "index":review[0] ,"review":sent } for review in tech_review_sent_corpus for sent in review[1] ]
+    # corpus = [ { "index":review[0] ,"review":sent } for review in tech_review_sent_corpus for sent in review[1] ]
 
-    with open(os.path.join(project_path,"data/tech_review_sent_corpus.pkl"),"wb") as f:
-        pickle.dump(corpus, f)
+    # with open(os.path.join(project_path,"data/tech_review_sent_corpus.pkl"),"wb") as f:
+    #     pickle.dump(corpus, f)
 
-    logger.info("Total Records for Review Corpus: {0}".format(str(len(corpus))))
+    # logger.info("Total Records for Review Corpus: {0}".format(str(len(corpus))))
 
-    logger.info("Create a Pretrained W2V Model")
-    logger.info("Parse Sentences")
-    all_co_reviews = all_reviews_en.review.tolist()
+    # logger.info("Create a Pretrained W2V Model")
+    # logger.info("Parse Sentences")
+    # all_co_reviews = all_reviews_en.review.tolist()
 
-    with Pool() as p:
-        all_review_sent_corpus = list(tqdm(p.imap(parseSentence, zip(all_co_reviews,range(len(all_co_reviews)))), total=len(all_co_reviews)))
+    # with Pool() as p:
+    #     all_review_sent_corpus = list(tqdm(p.imap(parseSentence, zip(all_co_reviews,range(len(all_co_reviews)))), total=len(all_co_reviews)))
 
-    logger.info("Train Model (can take awhile!)")
-    sentences = [item.split() for sublist in all_review_sent_corpus for item in sublist[1]]
-    model = Word2Vec(sentences, size=200, window=10, min_count=5, workers=num_cpus)
-    model.save(os.path.join(project_path,"models/w2v_embedding"))
+    # logger.info("Train Model (can take awhile!)")
+    # sentences = [item.split() for sublist in all_review_sent_corpus for item in sublist[1]]
+    # model = Word2Vec(sentences, size=200, window=10, min_count=5, workers=num_cpus)
+    # model.save(os.path.join(project_path,"models/w2v_embedding"))
