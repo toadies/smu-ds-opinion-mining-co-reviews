@@ -4,6 +4,8 @@ from tqdm import tqdm
 from sklearn.metrics import classification_report
 import keras.backend as K
 from keras.preprocessing import sequence
+import os
+project_path = os.path.join(os.path.dirname(__file__), "../..")
 
 import utils as U
 import reader as dataset
@@ -12,31 +14,57 @@ from my_layers import Attention, Average, WeightedSum, WeightedAspectEmb, MaxMar
 ######### Get hyper-params in order to rebuild the model architecture ###########
 # The hyper parameters should be exactly the same as those used for training
 
-parser = U.add_common_args()
-args = parser.parse_args()
+# parser = U.add_common_args()
+# args = parser.parse_args()
 
-out_dir = args.out_dir_path + '/' + args.domain
-# out_dir = '../pre_trained_model/' + args.domain
-U.print_args(args)
-
-# assert args.domain in {'restaurant', 'beer'}
+out_dir = os.path.join(project_path,"results/ABAE")
 
 ###### Get test data #############
-vocab, train_x, _, overall_maxlen = dataset.get_data(args.domain, vocab_size=args.vocab_size, maxlen=args.maxlen)
-test_x = train_x 
+import json
+from tqdm import tqdm
+from multiprocessing import Pool
+import pandas as pd
+import pickle
+
+with open(os.path.join(project_path, "data/tech_review_sent_corpus.pkl"),"rb") as f:
+    tech_review_corpus = pickle.load(f)
+
+with open(os.path.join(project_path, "data/stop_words.json"), "r") as f:
+    stop_words = json.load(f)
+
+def removeStopWords(review):
+    tokens = review.split(" ")
+    return " ".join([ word for word in tokens if word not in stop_words ])
+
+
+reviews = pd.DataFrame(tech_review_corpus).review.tolist()
+
+with Pool() as p:
+  reviews = list(tqdm(p.imap(removeStopWords, reviews), total=len(reviews)))
+
+maxlen = 115  # Based on 2 standard deviations from mean
+vocab_path = os.path.join(project_path,"data/vocab-text-review.txt")
+vocab, test_x, overall_maxlen = dataset.get_data(reviews, vocab_path, vocab_size=0, maxlen=maxlen)
 test_x = sequence.pad_sequences(test_x, maxlen=overall_maxlen)
+
+vocab_inv = {}
+for w, ind in vocab.items():
+    vocab_inv[ind] = w
+
+
 test_length = test_x.shape[0]
+batch_size = 50
 splits = []
-for i in range(1, test_length // args.batch_size):
-    splits.append(args.batch_size * i)
-if test_length % args.batch_size:
-    splits += [(test_length // args.batch_size) * args.batch_size]
+for i in range(1, test_length // batch_size):
+    splits.append(batch_size * i)
+if test_length % batch_size:
+    splits += [(test_length // batch_size) * batch_size]
 test_x = np.split(test_x, splits)
 
 ############# Build model architecture, same as the model used for training #########
 
 ## Load the save model parameters
-model = load_model(out_dir + '/model_param',
+model = load_model(out_dir + '/test-abae-k-5-orth-0.8',
                    custom_objects={"Attention": Attention, "Average": Average, "WeightedSum": WeightedSum,
                                    "MaxMargin": MaxMargin, "WeightedAspectEmb": WeightedAspectEmb,
                                    "max_margin_loss": U.max_margin_loss},
@@ -93,10 +121,6 @@ def prediction(test_labels, aspect_probs, cluster_map, domain):
 
 
 ## Create a dictionary that map word index to word 
-vocab_inv = {}
-for w, ind in vocab.items():
-    vocab_inv[ind] = w
-
 test_fn = K.function([model.get_layer('sentence_input').input, K.learning_phase()],
                      [model.get_layer('att_weights').output, model.get_layer('p_t').output])
 att_weights, aspect_probs = [], []
@@ -109,7 +133,6 @@ att_weights = np.concatenate(att_weights)
 aspect_probs = np.concatenate(aspect_probs)
 
 ######### Topic weight ###################################
-
 topic_weight_out = open(out_dir + '/topic_weights', 'wt', encoding='utf-8')
 labels_out = open(out_dir + '/labels.txt', 'wt', encoding='utf-8')
 print('Saving topic weights on test sentences...')

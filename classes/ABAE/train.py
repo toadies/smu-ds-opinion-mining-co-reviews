@@ -7,8 +7,8 @@ import keras.backend as K
 
 def train(model, sen_gen, neg_gen, epochs, batch_size, batches_per_epoch, result_path_name, vocab_inv):
     min_loss = float('inf')
-    for ii in range(epochs):
-        t0 = time()
+    t0 = time()
+    for ii in tqdm(range(epochs)):
         loss, max_margin_loss = 0., 0.
 
         # for b in tqdm(range(batches_per_epoch)):
@@ -21,7 +21,7 @@ def train(model, sen_gen, neg_gen, epochs, batch_size, batches_per_epoch, result
             loss += batch_loss / batches_per_epoch
             max_margin_loss += batch_max_margin_loss / batches_per_epoch
 
-        tr_time = time() - t0
+        
 
         if loss < min_loss:
             min_loss = loss
@@ -31,7 +31,7 @@ def train(model, sen_gen, neg_gen, epochs, batch_size, batches_per_epoch, result
             aspect_emb = aspect_emb / np.linalg.norm(aspect_emb, axis=-1, keepdims=True)
 
             aspect = {}
-            # model.save(result_path_name)
+            model.save(result_path_name)
             
             for ind in range(len(aspect_emb)):
                 desc = aspect_emb[ind]
@@ -42,7 +42,8 @@ def train(model, sen_gen, neg_gen, epochs, batch_size, batches_per_epoch, result
                 # print(desc_list)
                 aspect['Aspect %d' % ind] = desc_list
         
-        print('Epoch %d, train: %is' % (ii, tr_time))
-        print('Total loss: %.4f, max_margin_loss: %.4f, ortho_reg: %.4f' % (loss, max_margin_loss, loss - max_margin_loss))
-    
+    tr_time = time() - t0
+    print('Epoch %d, train: %is' % (ii, tr_time))
+    print('Total loss: %.4f, max_margin_loss: %.4f, ortho_reg: %.4f' % (loss, max_margin_loss, loss - max_margin_loss))
+        
     return aspect
