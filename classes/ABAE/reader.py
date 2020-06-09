@@ -17,6 +17,7 @@ def create_vocab(corpus, vocab_path, maxlen=0, vocab_size=0):
 
     for line in corpus:
         words = line.split()
+
         if maxlen > 0 and len(words) > maxlen:
             continue
 
