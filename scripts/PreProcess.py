@@ -10,34 +10,39 @@ from gensim.models import Word2Vec
 import json
 import os
 import logging
+import re
 
 
-project_path = os.path.join(os.path.dirname(__file__),"..")
+project_path = os.path.join(os.path.dirname(__file__), "..")
 
 num_cpus = mp.cpu_count() - 1
 
-with open(os.path.join(project_path,"data/all_reviews.pkl"),"rb") as f:
+with open(os.path.join(project_path, "data/all_reviews.pkl"), "rb") as f:
     all_reviews = pickle.load(f)
-    
-job_filter = pd.read_csv(os.path.join(project_path,"data/filter_job_titles.csv"))
 
-with open(os.path.join(project_path,"data/replacement_words.json"),"r") as f:
+job_filter = pd.read_csv(os.path.join(project_path, "data/filter_job_titles.csv"))
+
+with open(os.path.join(project_path, "data/replacement_words.json"), "r") as f:
     replacement_words = json.load(f)
+
+lmtzr = WordNetLemmatizer()
+
 
 def replaceWord(word):
     try:
-        word = replacement_words[word]
+        word = lmtzr.lemmatize(replacement_words[word])
     except:
         pass
     return word
 
-import re
-alphabets= "([A-Za-z])"
+
+alphabets = "([A-Za-z])"
 prefixes = "(Mr|St|Mrs|Ms|Dr)[.]"
 suffixes = "(Inc|Ltd|Jr|Sr|Co)"
 starters = r"(Mr|Mrs|Ms|Dr|He\s|She\s|It\s|They\s|Their\s|Our\s|We\s|But\s|However\s|That\s|This\s|Wherever)"
 acronyms = "([A-Z][.][A-Z][.](?:[A-Z][.])?)"
 websites = "[.](com|net|org|io|gov)"
+
 
 def split_into_sentences(text):
     text = " " + text + "  "
@@ -84,7 +89,6 @@ def parseSentence(args):
 def parseReview(args):
     line = args[0]
     i = args[1]
-    lmtzr = WordNetLemmatizer()
     text_token = CountVectorizer().build_tokenizer()(line.lower())
     text_stem = [lmtzr.lemmatize(w) for w in text_token]
     text_replacments = [replaceWord(word) for word in text_stem]
@@ -115,6 +119,13 @@ def createStopWords():
         json.dump(stop_words, f)
 
     return stop_words
+
+
+def filterEmptyString(row):
+    tokens = row["review"].split(" ")
+    review = " ".join([ word for word in tokens if word not in stop_words ]).strip()
+    return len(review) > 0
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
@@ -150,28 +161,30 @@ if __name__ == "__main__":
 
     logger.info("Save Files")
 
-    corpus = [ {"index":review[0],"review":review[0]} for review in tech_review_word_corpus ]
+    corpus = [ {"index":review[0], "review":review[0]} for review in tech_review_word_corpus ]
 
     with open(os.path.join(project_path,"data/tech_review_word_corpus.pkl"),"wb") as f:
         pickle.dump(corpus, f)
 
     logger.info("Total Records for Review Corpus: {0}".format(str(len(corpus))))
 
-    corpus = [ { "index":review[0] ,"review":sent } for review in tech_review_sent_corpus for sent in review[1] ]
+    corpus = [ {"index": review[0], "review": sent} for review in tech_review_sent_corpus for sent in review[1] ]
+    corpus = list(filter(filterEmptyString, corpus))
+
 
     with open(os.path.join(project_path,"data/tech_review_sent_corpus.pkl"),"wb") as f:
         pickle.dump(corpus, f)
 
     logger.info("Total Records for Review Corpus: {0}".format(str(len(corpus))))
 
-    logger.info("Create a Pretrained W2V Model")
-    logger.info("Parse Sentences")
-    all_co_reviews = all_reviews_en.review.tolist()
+    # logger.info("Create a Pretrained W2V Model")
+    # logger.info("Parse Sentences")
+    # all_co_reviews = all_reviews_en.review.tolist()
 
-    with Pool() as p:
-        all_review_sent_corpus = list(tqdm(p.imap(parseSentence, zip(all_co_reviews,range(len(all_co_reviews)))), total=len(all_co_reviews)))
+    # with Pool() as p:
+    #     all_review_sent_corpus = list(tqdm(p.imap(parseSentence, zip(all_co_reviews,range(len(all_co_reviews)))), total=len(all_co_reviews)))
 
-    logger.info("Train Model (can take awhile!)")
-    sentences = [item.split() for sublist in all_review_sent_corpus for item in sublist[1]]
-    model = Word2Vec(sentences, size=200, window=10, min_count=5, workers=num_cpus)
-    model.save(os.path.join(project_path,"models/w2v_embedding"))
+    # logger.info("Train Model (can take awhile!)")
+    # sentences = [item.split() for sublist in all_review_sent_corpus for item in sublist[1]]
+    # model = Word2Vec(sentences, size=200, window=10, min_count=5, workers=num_cpus)
+    # model.save(os.path.join(project_path,"models/w2v_embedding"))
