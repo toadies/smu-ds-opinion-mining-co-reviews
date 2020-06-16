@@ -7,3 +7,4 @@ smu-ds-opinion-mining-co-reviews.Rproj
 .DS_Store
 *.pyc
 .ipynb_checkpoints
+.vscode/settings.json
