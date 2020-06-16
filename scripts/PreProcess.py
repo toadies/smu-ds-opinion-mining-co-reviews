@@ -112,10 +112,10 @@ def createStopWords():
     stop_words = list( set(stop_words) )
     stop_words = [x for x in stop_words if x not in ['management','performance','measurement']]
 
-    stop_words.extend(["saas","inc","company","chrysler","packard","capegemini"])
+    stop_words.extend(["saas","inc","company","chrysler","packard","capegemini","im","wa","ha"])
     logger.info("Stop Word Count: {0}".format(len(stop_words)))
 
-    with open(os.path.join(project_path,"data/stop_words.json"), "w") as f:
+    with open(os.path.join(project_path, "data/stop_words.json"), "w") as f:
         json.dump(stop_words, f)
 
     return stop_words
@@ -155,15 +155,15 @@ if __name__ == "__main__":
     with Pool(num_cpus) as p:
         tech_review_word_corpus = list(tqdm(p.imap(parseReview, zip(co_reviews,indices)), total=len(co_reviews)))
 
-    print("Original Review\n",[review for review, i in zip(co_reviews, indices) if i == 119065])
-    print("Review Parse\n",[review for review in tech_review_word_corpus if review[0] == 119065])
-    print("Sentence Parse\n",[review for review in tech_review_sent_corpus if review[0] == 119065])
+    print("Original Review\n", [review for review, i in zip(co_reviews, indices) if i == 119065])
+    print("Review Parse\n", [review for review in tech_review_word_corpus if review[0] == 119065])
+    print("Sentence Parse\n", [review for review in tech_review_sent_corpus if review[0] == 119065])
 
     logger.info("Save Files")
 
-    corpus = [ {"index":review[0], "review":review[0]} for review in tech_review_word_corpus ]
+    corpus = [{"index":review[0], "review":review[1]} for review in tech_review_word_corpus]
 
-    with open(os.path.join(project_path,"data/tech_review_word_corpus.pkl"),"wb") as f:
+    with open(os.path.join(project_path, "data/tech_review_word_corpus.pkl"),"wb") as f:
         pickle.dump(corpus, f)
 
     logger.info("Total Records for Review Corpus: {0}".format(str(len(corpus))))
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     corpus = list(filter(filterEmptyString, corpus))
 
 
-    with open(os.path.join(project_path,"data/tech_review_sent_corpus.pkl"),"wb") as f:
+    with open(os.path.join(project_path, "data/tech_review_sent_corpus.pkl"),"wb") as f:
         pickle.dump(corpus, f)
 
     logger.info("Total Records for Review Corpus: {0}".format(str(len(corpus))))
