@@ -20,7 +20,8 @@ num_cpus = mp.cpu_count() - 1
 with open(os.path.join(project_path, "data/all_reviews.pkl"), "rb") as f:
     all_reviews = pickle.load(f)
 
-job_filter = pd.read_csv(os.path.join(project_path, "data/filter_job_titles.csv"))
+job_filter = pd.read_csv(os.path.join(
+    project_path, "data/filter_job_titles.csv"))
 
 with open(os.path.join(project_path, "data/replacement_words.json"), "r") as f:
     replacement_words = json.load(f)
@@ -46,45 +47,57 @@ websites = "[.](com|net|org|io|gov)"
 
 def split_into_sentences(text):
     text = " " + text + "  "
-    text = text.replace("\n"," ")
-    text = text.replace("\r"," ")
-    text = re.sub(prefixes,"\\1<prd>",text)
-    text = re.sub(websites,"<prd>\\1",text)
-    if "Ph.D" in text: text = text.replace("Ph.D.","Ph<prd>D<prd>")
-    text = re.sub(r"\s" + alphabets + "[.] "," \\1<prd> ",text)
-    text = re.sub(acronyms+" "+starters,"\\1<stop> \\2",text)
-    text = re.sub(alphabets + "[.]" + alphabets + "[.]" + alphabets + "[.]","\\1<prd>\\2<prd>\\3<prd>",text)
-    text = re.sub(alphabets + "[.]" + alphabets + "[.]","\\1<prd>\\2<prd>",text)
-    text = re.sub(" "+suffixes+"[.] "+starters," \\1<stop> \\2",text)
-    text = re.sub(" "+suffixes+"[.]"," \\1<prd>",text)
-    text = re.sub(" " + alphabets + "[.]"," \\1<prd>",text)
-    if "”" in text: text = text.replace(".”","”.")
-    if "\"" in text: text = text.replace(".\"","\".")
-    if "!" in text: text = text.replace("!\"","\"!")
-    if "?" in text: text = text.replace("?\"","\"?")
-    text = text.replace(".",".<stop>")
-    text = text.replace("?","?<stop>")
-    text = text.replace("!","!<stop>")
-    text = text.replace("<prd>",".")
+    text = text.replace("\n", " ")
+    text = text.replace("\r", " ")
+    text = re.sub(prefixes, "\\1<prd>", text)
+    text = re.sub(websites, "<prd>\\1", text)
+    if "Ph.D" in text:
+        text = text.replace("Ph.D.", "Ph<prd>D<prd>")
+    text = re.sub(r"\s" + alphabets + "[.] ", " \\1<prd> ", text)
+    text = re.sub(acronyms+" "+starters, "\\1<stop> \\2", text)
+    text = re.sub(alphabets + "[.]" + alphabets + "[.]" +
+                  alphabets + "[.]", "\\1<prd>\\2<prd>\\3<prd>", text)
+    text = re.sub(alphabets + "[.]" + alphabets +
+                  "[.]", "\\1<prd>\\2<prd>", text)
+    text = re.sub(" "+suffixes+"[.] "+starters, " \\1<stop> \\2", text)
+    text = re.sub(" "+suffixes+"[.]", " \\1<prd>", text)
+    text = re.sub(" " + alphabets + "[.]", " \\1<prd>", text)
+    if "”" in text:
+        text = text.replace(".”", "”.")
+    if "\"" in text:
+        text = text.replace(".\"", "\".")
+    if "!" in text:
+        text = text.replace("!\"", "\"!")
+    if "?" in text:
+        text = text.replace("?\"", "\"?")
+    text = text.replace(".", ".<stop>")
+    text = text.replace("?", "?<stop>")
+    text = text.replace("!", "!<stop>")
+    text = text.replace("<prd>", ".")
     sentences = text.split("<stop>")
-    
+
     sentences = [s.strip() for s in sentences]
     sentences = [i for i in sentences if len(i) > 0]
     return sentences
 
+
 lmtzr = WordNetLemmatizer()
+
+
 def parseSentence(args):
     line = args[0]
     i = args[1]
-    result=[]
+    result = []
     sent_tokens = split_into_sentences(line.lower())
     for sent in sent_tokens:
-        text_token = re.split(r"\W+",sent)
-        text_rmstop = [lmtzr.lemmatize(word) for word in text_token ] # if word not in stop_words]
-        text_replacments = [ replaceWord(word) for word in text_rmstop ]
-        if len(text_replacments) > 0: # Don't append if missing words
+        text_token = re.split(r"\W+", sent)
+        # if word not in stop_words]
+        text_rmstop = [lmtzr.lemmatize(word) for word in text_token]
+        text_replacments = [replaceWord(word) for word in text_rmstop]
+        if len(text_replacments) > 0:  # Don't append if missing words
             result.append(' '.join(text_replacments).strip())
     return i, result
+
 
 def parseReview(args):
     line = args[0]
@@ -96,8 +109,9 @@ def parseReview(args):
 
     return i, " ".join(text_replacments)
 
+
 def createStopWords():
-    #Create Stop Words
+    # Create Stop Words
     company_name = all_reviews_en.company_name
     company_name = list(set(company_name))
 
@@ -108,14 +122,16 @@ def createStopWords():
     logger.info("Initial Stop Word Count: {0}".format(len(stop_words)))
     for token in tokens:
         stop_words.extend(token[0:1])
-        
-    stop_words = list( set(stop_words) )
-    stop_words = [x for x in stop_words if x not in ['management','performance','measurement']]
 
-    stop_words.extend(["saas","inc","company","chrysler","packard","capegemini"])
+    stop_words = list(set(stop_words))
+    stop_words = [x for x in stop_words if x not in [
+        'management', 'performance', 'measurement']]
+
+    stop_words.extend(
+        ["saas", "inc", "company", "chrysler", "packard", "capegemini"])
     logger.info("Stop Word Count: {0}".format(len(stop_words)))
 
-    with open(os.path.join(project_path,"data/stop_words.json"), "w") as f:
+    with open(os.path.join(project_path, "data/stop_words.json"), "w") as f:
         json.dump(stop_words, f)
 
     return stop_words
@@ -123,22 +139,24 @@ def createStopWords():
 
 def filterEmptyString(row):
     tokens = row["review"].split(" ")
-    review = " ".join([ word for word in tokens if word not in stop_words ]).strip()
+    review = " ".join(
+        [word for word in tokens if word not in stop_words]).strip()
     return len(review) > 0
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s %(levelname)s %(message)s')
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
     job_filters = job_filter.clean_job_title.tolist()
 
     idx = (all_reviews.language == "en")
-    all_reviews_en = all_reviews.loc[idx,:]
+    all_reviews_en = all_reviews.loc[idx, :]
 
     idx = (all_reviews_en.clean_job_title.isin(job_filters))
-    tech_reviews = all_reviews_en.loc[idx,:].reset_index()
+    tech_reviews = all_reviews_en.loc[idx, :].reset_index()
 
     logger.info("Total Rows in Corpus: {0}".format(str(tech_reviews.shape)))
 
@@ -149,33 +167,40 @@ if __name__ == "__main__":
     co_reviews = tech_reviews.review.tolist()
     logger.info("Parse Sentences")
     with Pool(num_cpus) as p:
-        tech_review_sent_corpus = list(tqdm(p.imap(parseSentence, zip(co_reviews,indices)), total=len(co_reviews)))
+        tech_review_sent_corpus = list(
+            tqdm(p.imap(parseSentence, zip(co_reviews, indices)), total=len(co_reviews)))
 
     logger.info("Review Parse")
     with Pool(num_cpus) as p:
-        tech_review_word_corpus = list(tqdm(p.imap(parseReview, zip(co_reviews,indices)), total=len(co_reviews)))
+        tech_review_word_corpus = list(
+            tqdm(p.imap(parseReview, zip(co_reviews, indices)), total=len(co_reviews)))
 
-    print("Original Review\n",[review for review, i in zip(co_reviews, indices) if i == 119065])
-    print("Review Parse\n",[review for review in tech_review_word_corpus if review[0] == 119065])
-    print("Sentence Parse\n",[review for review in tech_review_sent_corpus if review[0] == 119065])
+    print("Original Review\n", [review for review,
+                                i in zip(co_reviews, indices) if i == 119065])
+    print("Review Parse\n", [
+          review for review in tech_review_word_corpus if review[0] == 119065])
+    print("Sentence Parse\n", [
+          review for review in tech_review_sent_corpus if review[0] == 119065])
 
     logger.info("Save Files")
 
-    corpus = [ {"index":review[0], "review":review[0]} for review in tech_review_word_corpus ]
+    corpus = [{"index": review[0], "review":review[1]}
+              for review in tech_review_word_corpus]
 
-    with open(os.path.join(project_path,"data/tech_review_word_corpus.pkl"),"wb") as f:
+    with open(os.path.join(project_path, "data/tech_review_word_corpus.pkl"), "wb") as f:
         pickle.dump(corpus, f)
 
-    logger.info("Total Records for Review Corpus: {0}".format(str(len(corpus))))
+    logger.info(
+        "Total Records for Review Corpus: {0}".format(str(len(corpus))))
 
-    corpus = [ {"index": review[0], "review": sent} for review in tech_review_sent_corpus for sent in review[1] ]
+    corpus = [{"index": review[0], "review": sent}
+              for review in tech_review_sent_corpus for sent in review[1]]
     corpus = list(filter(filterEmptyString, corpus))
-
-
-    with open(os.path.join(project_path,"data/tech_review_sent_corpus.pkl"),"wb") as f:
+    with open(os.path.join(project_path, "data/tech_review_sent_corpus.pkl"), "wb") as f:
         pickle.dump(corpus, f)
 
-    logger.info("Total Records for Review Corpus: {0}".format(str(len(corpus))))
+    logger.info(
+        "Total Records for Review Corpus: {0}".format(str(len(corpus))))
 
     # logger.info("Create a Pretrained W2V Model")
     # logger.info("Parse Sentences")
