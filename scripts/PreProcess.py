@@ -128,7 +128,7 @@ def createStopWords():
         'management', 'performance', 'measurement']]
 
     stop_words.extend(
-        ["saas", "inc", "company", "chrysler", "packard", "capegemini"])
+        ["saas", "inc", "company", "chrysler", "packard", "capegemini", "wa", "ha", "im"])
     logger.info("Stop Word Count: {0}".format(len(stop_words)))
 
     with open(os.path.join(project_path, "data/stop_words.json"), "w") as f:

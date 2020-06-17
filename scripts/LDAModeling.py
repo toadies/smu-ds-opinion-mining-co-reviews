@@ -82,8 +82,7 @@ if __name__ == "__main__":
 
             aspect = {}
             for idx, topic in enumerate(lda.components_):
-                aspect['Aspect {0}'.format(str(idx))] = {vectorizer.get_feature_names()[i]: topic[i]
-                                                         for i in topic.argsort()[:-100 - 1:-1]}
+                aspect['Aspect {0}'.format(str(idx))] = [vectorizer.get_feature_names() for i in topic.argsort()[:-100 - 1:-1]]
 
             with open(os.path.join(project_path, aspect_file_name), "w") as f:
                 json.dump(aspect, f)
