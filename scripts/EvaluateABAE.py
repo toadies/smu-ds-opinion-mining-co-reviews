@@ -34,7 +34,7 @@ def removeStopWords(review):
 if __name__ == "__main__":
 
     out_dir = os.path.join(project_path,"results/ABAE")
-    model_name = "abae-k-10-orth-0.3"
+    model_name = "abae-k-5-orth-1"
 
     reviews = pd.DataFrame(tech_review_corpus).review.tolist()
 
