@@ -1,7 +1,11 @@
 import pandas as pd
 import pickle
 from nltk.corpus import stopwords
-from nltk import WordNetLemmatizer
+from nltk.corpus import wordnet as wn
+from nltk.stem.wordnet import WordNetLemmatizer
+from nltk import word_tokenize, pos_tag
+from string import punctuation
+from collections import defaultdict
 from sklearn.feature_extraction.text import CountVectorizer
 from tqdm import tqdm
 import multiprocessing as mp
@@ -81,7 +85,12 @@ def split_into_sentences(text):
     return sentences
 
 
+
 lmtzr = WordNetLemmatizer()
+tag_map = defaultdict(lambda : wn.NOUN)
+tag_map['J'] = wn.ADJ
+tag_map['V'] = wn.VERB
+tag_map['R'] = wn.ADV
 
 
 def parseSentence(args):
@@ -90,24 +99,17 @@ def parseSentence(args):
     result = []
     sent_tokens = split_into_sentences(line.lower())
     for sent in sent_tokens:
-        text_token = re.split(r"\W+", sent)
-        # if word not in stop_words]
-        text_rmstop = [lmtzr.lemmatize(word) for word in text_token]
-        text_replacments = [replaceWord(word) for word in text_rmstop]
+        text_token = word_tokenize(sent)
+        text_lmtz = [lmtzr.lemmatize(token, tag_map[tag[0]]) for token, tag in pos_tag(text_token) if tag not in punctuation]
+        text_replacments = [replaceWord(word) for word in text_lmtz]
         if len(text_replacments) > 0:  # Don't append if missing words
             result.append(' '.join(text_replacments).strip())
     return i, result
 
 
 def parseReview(args):
-    line = args[0]
-    i = args[1]
-    text_token = CountVectorizer().build_tokenizer()(line.lower())
-    text_stem = [lmtzr.lemmatize(w) for w in text_token]
-    text_replacments = [replaceWord(word) for word in text_stem]
-    # text_rmstop = [i for i in text_replacments if i not in stop_words]
-
-    return i, " ".join(text_replacments)
+    i, sent_tokens = parseSentence(args)
+    return i, " ".join(sent_tokens)
 
 
 def createStopWords():
@@ -128,7 +130,7 @@ def createStopWords():
         'management', 'performance', 'measurement']]
 
     stop_words.extend(
-        ["saas", "inc", "company", "chrysler", "packard", "capegemini"])
+        ["saas", "inc", "company", "chrysler", "packard", "capegemini", "wa", "ha", "im"])
     logger.info("Stop Word Count: {0}".format(len(stop_words)))
 
     with open(os.path.join(project_path, "data/stop_words.json"), "w") as f:
@@ -202,14 +204,14 @@ if __name__ == "__main__":
     logger.info(
         "Total Records for Review Corpus: {0}".format(str(len(corpus))))
 
-    # logger.info("Create a Pretrained W2V Model")
-    # logger.info("Parse Sentences")
-    # all_co_reviews = all_reviews_en.review.tolist()
+    logger.info("Create a Pretrained W2V Model")
+    logger.info("Parse Sentences")
+    all_co_reviews = all_reviews_en.review.tolist()
 
-    # with Pool() as p:
-    #     all_review_sent_corpus = list(tqdm(p.imap(parseSentence, zip(all_co_reviews,range(len(all_co_reviews)))), total=len(all_co_reviews)))
+    with Pool() as p:
+        all_review_sent_corpus = list(tqdm(p.imap(parseSentence, zip(all_co_reviews,range(len(all_co_reviews)))), total=len(all_co_reviews)))
 
-    # logger.info("Train Model (can take awhile!)")
-    # sentences = [item.split() for sublist in all_review_sent_corpus for item in sublist[1]]
-    # model = Word2Vec(sentences, size=200, window=10, min_count=5, workers=num_cpus)
-    # model.save(os.path.join(project_path,"models/w2v_embedding"))
+    logger.info("Train Model (can take awhile!)")
+    sentences = [item.split() for sublist in all_review_sent_corpus for item in sublist[1]]
+    model = Word2Vec(sentences, size=200, window=10, min_count=5, workers=num_cpus)
+    model.save(os.path.join(project_path, "models/w2v_embedding"))

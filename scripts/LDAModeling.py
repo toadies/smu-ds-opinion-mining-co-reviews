@@ -1,6 +1,7 @@
 import json
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
+from tmtoolkit.topicmod.evaluate import metric_coherence_gensim
 import pandas as pd
 import numpy as np
 import pickle
@@ -24,7 +25,7 @@ def tokenize(doc):
 if __name__ == "__main__":
 
     print("Loading tech corpus")
-    with open(os.path.join(project_path, "data/tech_review_sent_corpus.pkl"), "rb") as f:
+    with open(os.path.join(project_path, "data/tech_review_word_corpus_nn_adj_adv.pkl"), "rb") as f:
         tech_review_corpus = pickle.load(f)
     reviews = pd.DataFrame(tech_review_corpus).review.tolist()
 
@@ -61,31 +62,42 @@ if __name__ == "__main__":
 
     print("Total parameter values to train", len(parameters))
 
+    result = []
+
     for param in tqdm(parameters):
-        aspect_file_name = "results/LDA/lda-aspect-k-{0}-a-{1}-b-{2}.json".format(
+        aspect_file_name = "results/LDA/lda-aspect-k-{0}-a-{1}-b-{2}-reduced_words.json".format(
             str(param["k"])[:4],
             str(param["alpha"])[:4],
             str(param["beta"])[:4]
         )
 
-        if not os.path.isfile(os.path.join(project_path, aspect_file_name)):
-            lda = LatentDirichletAllocation(
-                learning_method="batch",
-                random_state=100,
-                n_components=param["k"],
-                doc_topic_prior=param["alpha"],
-                topic_word_prior=param["beta"],
-                n_jobs=-2
-            )
+        lda = LatentDirichletAllocation(
+            learning_method="batch",
+            random_state=100,
+            n_components=param["k"],
+            doc_topic_prior=param["alpha"],
+            topic_word_prior=param["beta"],
+            n_jobs=num_cpus - 2,
+            max_iter=50
+        )
 
-            lda.fit(X)
+        lda.fit(X)
 
-            aspect = {}
-            for idx, topic in enumerate(lda.components_):
-                aspect['Aspect {0}'.format(str(idx))] = {vectorizer.get_feature_names()[i]: topic[i]
-                                                         for i in topic.argsort()[:-100 - 1:-1]}
+        score = metric_coherence_gensim(measure='u_mass', 
+            top_n=25, 
+            topic_word_distrib=lda.components_, 
+            dtm=X, 
+            vocab=np.array([x for x in vectorizer.vocabulary_.keys()]),
+            return_mean=True
+        )
+        
+        result.append({
+            "k":param["k"],
+            "alpha":param["alpha"],
+            "beta":param["beta"],
+            "score":score
+        })
 
-            with open(os.path.join(project_path, aspect_file_name), "w") as f:
-                json.dump(aspect, f)
+        pd.DataFrame(result).to_csv(os.path.join(project_path,"data/lda_noun_umass.csv"))
 
     print("Done!")

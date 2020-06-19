@@ -40,7 +40,7 @@ if __name__ == "__main__":
     df.fillna(0, inplace=True)
     df["tag"] = df.idxmax(axis=1)
     df = df.reset_index().rename(columns={"index":"word"})
-    df.to_csv(os.path.join(project_path,"data/pos-tagger.csv"),index=False)
+    df.to_csv(os.path.join(project_path,"data/pos-tagger.csv"), index=False)
 
     print("Done!")
-    print(df[["word","tag"]].head())
+    print(df[["word", "tag"]].head())
