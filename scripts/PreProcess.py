@@ -100,7 +100,8 @@ def parseSentence(args):
     sent_tokens = split_into_sentences(line.lower())
     for sent in sent_tokens:
         text_token = word_tokenize(sent)
-        text_lmtz = [lmtzr.lemmatize(token, tag_map[tag[0]]) for token, tag in pos_tag(text_token) if tag not in punctuation]
+        text_lmtz = [lmtzr.lemmatize(token, tag_map[tag[0]])
+            for token, tag in pos_tag(text_token) if (tag not in punctuation) & (not (not token.isalnum()) & (len(token) < 3))]
         text_replacments = [replaceWord(word) for word in text_lmtz]
         if len(text_replacments) > 0:  # Don't append if missing words
             result.append(' '.join(text_replacments).strip())
