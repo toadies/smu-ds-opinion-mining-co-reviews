@@ -8,3 +8,4 @@ smu-ds-opinion-mining-co-reviews.Rproj
 *.pyc
 .ipynb_checkpoints
 .vscode/settings.json
+scripts/PreProcess.py
