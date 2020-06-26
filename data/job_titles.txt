@@ -1,0 +1,83 @@
+Job_Title,Job_Family
+Cloud Architect, Cloud Computing Engineer
+Cloud Consultant, Cloud Computing Engineer
+Cloud Product and Project Manager, Cloud Computing Engineer
+Cloud Services Developer, Cloud Computing Engineers
+Cloud Software and Network Engineer, Cloud Computing Engineers
+Cloud System Administrator, Cloud Computing Engineers
+Cloud System Engineer, Cloud Computing Engineers
+Computer and Information Research Scientist, Computer Network Specialist
+Computer and Information Systems Manager, Computer Network Specialist
+Computer Network Architect, Computer Network Specialist
+Computer Systems Analyst, Computer Network Specialist
+Computer Systems Manager, Computer Network Specialist
+IT Analyst, Computer Network Specialist
+IT Coordinator, Computer Network Specialist
+Network Administrator, Computer Network Specialist
+Network Architect, Computer Network Specialist
+Network and Computer Systems Administrator, Computer Network Specialist
+Network Engineer, Computer Network Specialist
+Network Systems Administrator, Computer Network Specialist
+Senior Network Architect, Computer Network Specialist
+Senior Network Engineer, Computer Network Specialist
+Senior Network System Administrator, Computer Network Specialist
+Telecommunications Specialist, Computer Network Specialist
+Customer Support Administrator, Computer Support Specialist
+Customer Support Specialist, Computer Support Specialist
+Desktop Support Manager, Computer Support Specialist
+Desktop Support Specialist, Computer Support Specialist
+Help Desk Specialist, Computer Support Specialist
+Help Desk Technician, Computer Support Specialist
+IT Support Manager, Computer Support Specialist
+IT Support Specialist, Computer Support Specialist
+IT Systems Administrator, Computer Support Specialist
+Senior Support Specialist, Computer Support Specialist
+Senior System Administrator, Computer Support Specialist
+Support Specialist, Computer Support Specialist
+Systems Administrator, Computer Support Specialist
+Technical Specialist, Computer Support Specialist
+Technical Support Engineer, Computer Support Specialist
+Technical Support Specialist, Computer Support Specialist
+Data Center Support Specialist, Database Administrator
+Data Quality Manager, Database Administrator
+Database Administrator, Database Administrator
+Senior Database Administrator, Database Administrator
+Application Support Analyst, Information Technology Analyst
+Senior System Analyst, Information Technology Analyst
+Systems Analyst, Information Technology Analyst
+Systems Designer, Information Technology Analyst
+Chief Information Officer, Information Technology Leadership
+Chief Technology Officer, Information Technology Leadership
+Director of Technology, Information Technology Leadership
+IT Director, Information Technology Leadership
+IT Manager, Information Technology Leadership
+Management Information Systems Director, Information Technology Leadership
+Technical Operations Officer, Information Technology Leadership
+Information Security, Information Security Specialist
+Application Developer, Software/Application Developer
+Applications Engineer, Software/Application Developer
+Associate Developer, Software/Application Developer
+Computer Programmer, Software/Application Developer
+Java Developer, Software/Application Developer
+Junior Software Engineer, Software/Application Developer
+.NET Developer, Software/Application Developer
+Programmer Analyst, Software/Application Developer
+Senior Applications Engineer, Software/Application Developer
+Senior Programmer, Software/Application Developer
+Senior Programmer Analyst, Software/Application Developer
+Senior Software Engineer, Software/Application Developer
+Senior System Architect, Software/Application Developer
+Senior System Designer, Software/Application Developer
+Senior Systems Software Engineer, Software/Application Developer
+Software Architect, Software/Application Developer
+Software Developer, Software/Application Developer
+Software Engineer, Software/Application Developer
+Software Quality Assurance Analyst, Software/Application Developer
+System Architect, Software/Application Developer
+Systems Software Engineer, Software/Application Developer
+Front End Developer, Web Developer
+Senior Web Administrator, Web Developer
+Senior Web Developer, Web Developer
+Web Administrator, Web Developer
+Web Developer, Web Developer
+Webmaster, Web Developer

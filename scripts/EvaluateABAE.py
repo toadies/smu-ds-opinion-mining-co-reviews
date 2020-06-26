@@ -34,14 +34,14 @@ def removeStopWords(review):
 if __name__ == "__main__":
 
     out_dir = os.path.join(project_path,"results/ABAE")
-    model_name = "abae-k-5-orth-1"
+    model_name = "abae-k-7-orth-0.75-neg-40"
 
     reviews = pd.DataFrame(tech_review_corpus).review.tolist()
 
     with Pool() as p:
         reviews = list(tqdm(p.imap(removeStopWords, reviews), total=len(reviews)))
 
-    maxlen = 115  # Based on 2 standard deviations from mean
+    maxlen = 112  # Based on 2 standard deviations from mean
     vocab_path = os.path.join(project_path,"data/vocab-text-review.txt")
     vocab, test_x, overall_maxlen = dataset.get_data(reviews, vocab_path, vocab_size=0, maxlen=maxlen)
     test_x = sequence.pad_sequences(test_x, maxlen=overall_maxlen)
@@ -93,6 +93,7 @@ if __name__ == "__main__":
     att_out = open(out_dir + '/'+model_name+'-att_weights', 'wt', encoding='utf-8')
     print('Saving attention weights on test sentences...')
     test_x = np.concatenate(test_x)
+    sentences = []
     for c in range(len(test_x)):
         att_out.write('----------------------------------------\n')
         att_out.write(str(c) + '\n')
@@ -106,3 +107,8 @@ if __name__ == "__main__":
         att_out.write(' '.join(words) + '\n')
         for j in range(len(words)):
             att_out.write(words[j] + ' ' + str(round(weights[j], 3)) + '\n')
+        
+        sentences.append({words[j]: str(round(weights[j], 3)) for j in range(len(words))})
+
+    with open(out_dir + '/'+model_name+'-att_weights.json', "w") as f:
+        json.dump(sentences, f)
