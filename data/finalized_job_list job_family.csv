@@ -1,4 +1,4 @@
-job_title,common_job_title, Job_Family,jaro,rank
+job_title,common_job_title,Job_Family,jaro,rank
 software engineer,software engineer, Software/Application Developer,1.0,1.0
 software engineer software engineer,software engineer, Software/Application Developer,0.8971428571428571,1.0
 software engineering,software engineer, Software/Application Developer,0.97,1.0
