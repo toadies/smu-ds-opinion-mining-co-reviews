@@ -1,6 +1,8 @@
 import codecs
 import re
 import operator
+from collections import Counter
+
 
 num_regex = re.compile('^[+-]?[0-9]+\.?[0-9]*$')
 
@@ -9,50 +11,29 @@ def is_number(token):
     return bool(num_regex.match(token))
 
 
-def create_vocab(corpus, vocab_path, maxlen=0, vocab_size=0):
-
-    total_words, unique_words = 0, 0
-    word_freqs = {}
-    top = 0
+def create_vocab(corpus, maxlen=0, word_freq=0):
+    vocab = Counter()
 
     for line in corpus:
         words = line.split()
-
-        if maxlen > 0 and len(words) > maxlen:
-            continue
-
+        
         for w in words:
-            if not is_number(w):
-                try:
-                    word_freqs[w] += 1
-                except KeyError:
-                    unique_words += 1
-                    word_freqs[w] = 1
-                total_words += 1
+            if is_number(w):
+                pass
+            else:
+                vocab[w] += 1
+    
+    #Remove Words Repeating less then word_freq times
+    final_list = [word for word in vocab if vocab[word] > word_freq]
 
-    print ('   %i total words, %i unique words' % (total_words, unique_words))
-    sorted_word_freqs = sorted(word_freqs.items(), key=operator.itemgetter(1), reverse=True)
-
-    vocab = {'<pad>': 0, '<unk>': 1, '<num>': 2}
-    index = len(vocab)
-    for word, _ in sorted_word_freqs:
-        vocab[word] = index
-        index += 1
-        if vocab_size > 0 and index > vocab_size + 2:
-            break
-    if vocab_size > 0:
-        print ('  keep the top %i words' % vocab_size)
-
-    # Write (vocab, frequence) to a txt file
-    vocab_file = codecs.open(vocab_path, mode='w', encoding='utf8')
-    sorted_vocab = sorted(vocab.items(), key=operator.itemgetter(1))
-    for word, index in sorted_vocab:
-        if index < 3:
-            vocab_file.write(word + '\t' + str(0) + '\n')
-            continue
-        vocab_file.write(word + '\t' + str(word_freqs[word]) + '\n')
-    vocab_file.close()
-
+    print("Unique Workds: {0}, Words after word_freq filter of {1}: {2}" \
+          .format(len(vocab),word_freq, len(final_list)))
+    
+    vocab = { word:i for i, word in enumerate(final_list, 3)}
+    vocab["<pad>"] = 0
+    vocab["<unk>"] = 1
+    vocab["<num>"] = 2
+    
     return vocab
 
 
@@ -88,13 +69,13 @@ def read_dataset(corpus, vocab, maxlen):
         x += 1
 
     print("Total Document Analyzed", x)
-    print('<num> hit rate: %.2f%%, <unk> hit rate: %.2f%%' % (100 * num_hit / total, 100 * unk_hit / total))
+    print('<num> hit rate: %.2f%%, <unk> hit rate: %.2f%%' % (100 * num_hit / total, 100 * unk_hit / total)) # 
     return data_x, maxlen_x
 
 
-def get_data(corpus, vocab_path, vocab_size=0, maxlen=0):
+def get_data(corpus, maxlen=0, word_freq=0):
     print(' Creating vocab ...')
-    vocab = create_vocab(corpus, vocab_path, maxlen, vocab_size)
+    vocab = create_vocab(corpus, maxlen, word_freq)
     print(' Reading dataset ...')
     print('  train set')
     train_x, train_maxlen = read_dataset(corpus, vocab, maxlen)
@@ -103,7 +84,4 @@ def get_data(corpus, vocab_path, vocab_size=0, maxlen=0):
 
 
 if __name__ == "__main__":
-    vocab, train_x, test_x, maxlen = get_data('restaurant')
-    print(len(train_x))
-    print(len(test_x))
-    print(maxlen)
+    pass

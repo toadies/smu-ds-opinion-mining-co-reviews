@@ -7,7 +7,8 @@ import keras.backend as K
 def train(model, sen_gen, neg_gen, epochs, batch_size, batches_per_epoch, result_path_name, vocab_inv):
     min_loss = float('inf')
     t0 = time()
-    for ii in tqdm(range(epochs)):
+    final_model = model
+    for ii in range(epochs):
         loss, max_margin_loss = 0., 0.
 
         # for b in tqdm(range(batches_per_epoch)):
@@ -30,13 +31,13 @@ def train(model, sen_gen, neg_gen, epochs, batch_size, batches_per_epoch, result
             aspect_emb = aspect_emb / np.linalg.norm(aspect_emb, axis=-1, keepdims=True)
 
             aspect = {}
-            model.save(result_path_name)
+            # final_model = model
             
             for ind in range(len(aspect_emb)):
                 desc = aspect_emb[ind]
                 sims = word_emb.dot(desc.T)
                 ordered_words = np.argsort(sims)[::-1]
-                desc_list = { vocab_inv[w]:str(sims[w]) for w in ordered_words[:100]}
+                desc_list = [vocab_inv[w] for w in ordered_words[:100]]
                 # print('Aspect %d:' % ind)
                 # print(desc_list)
                 aspect['Aspect %d' % ind] = desc_list
@@ -45,4 +46,4 @@ def train(model, sen_gen, neg_gen, epochs, batch_size, batches_per_epoch, result
     print('Epoch %d, train: %is' % (ii, tr_time))
     print('Total loss: %.4f, max_margin_loss: %.4f, ortho_reg: %.4f' % (loss, max_margin_loss, loss - max_margin_loss))
         
-    return aspect
+    return aspect, final_model

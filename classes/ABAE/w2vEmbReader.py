@@ -46,7 +46,7 @@ class W2VEmbReader:
             except KeyError:
                 pass
 
-        print('%i/%i word vectors initialized (hit rate: %.2f%%)' % (counter, len(vocab), 100 * counter / len(vocab)))
+        # print('%i/%i word vectors initialized (hit rate: %.2f%%)' % (counter, len(vocab), 100 * counter / len(vocab)))
         # L2 normalization
         norm_emb_matrix = emb_matrix / np.linalg.norm(emb_matrix, axis=-1, keepdims=True)
         return norm_emb_matrix
