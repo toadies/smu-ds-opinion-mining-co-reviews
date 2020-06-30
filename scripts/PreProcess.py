@@ -24,8 +24,7 @@ num_cpus = mp.cpu_count() - 1
 with open(os.path.join(project_path, "data/all_reviews.pkl"), "rb") as f:
     all_reviews = pickle.load(f)
 
-job_filter = pd.read_csv(os.path.join(
-    project_path, "data/filter_job_titles.csv"))
+job_filter = pd.read_csv(os.path.join(project_path, "data/filter_job_titles.csv"))
 
 with open(os.path.join(project_path, "data/replacement_words.json"), "r") as f:
     replacement_words = json.load(f)
@@ -91,6 +90,7 @@ tag_map = defaultdict(lambda : wn.NOUN)
 tag_map['J'] = wn.ADJ
 tag_map['V'] = wn.VERB
 tag_map['R'] = wn.ADV
+punct_replace = re.compile(r'^[-/*+]+|[-/*+]+$') 
 
 
 def parseSentence(args):
@@ -100,11 +100,18 @@ def parseSentence(args):
     sent_tokens = split_into_sentences(line.lower())
     for sent in sent_tokens:
         text_token = word_tokenize(sent)
+        #Remove punctuation from word, split by /
+        text_token = [ punct_replace.subn('', word)[0] for word in text_token]
+        text_token = [ word.replace("/", " ") for word in text_token]
+        text_token = " ".join(text_token) #Merge back
+        
+        text_token = text_token.split() #Start Over
         text_lmtz = [lmtzr.lemmatize(token, tag_map[tag[0]])
-            for token, tag in pos_tag(text_token) if (tag not in punctuation) & (not (not token.isalnum()) & (len(token) < 3))]
+                        for token, tag in pos_tag(text_token) if (tag not in punctuation) & (not (not token.isalnum()) & (len(token) < 3))]
         text_replacments = [replaceWord(word) for word in text_lmtz]
         if len(text_replacments) > 0:  # Don't append if missing words
             result.append(' '.join(text_replacments).strip())
+    
     return i, result
 
 
@@ -170,13 +177,12 @@ if __name__ == "__main__":
     co_reviews = tech_reviews.review.tolist()
     logger.info("Parse Sentences")
     with Pool(num_cpus) as p:
-        tech_review_sent_corpus = list(
-            tqdm(p.imap(parseSentence, zip(co_reviews, indices)), total=len(co_reviews)))
+        tech_review_sent_corpus = list(tqdm(p.imap(parseSentence, zip(co_reviews, indices)), total=len(co_reviews)))
 
     logger.info("Review Parse")
     with Pool(num_cpus) as p:
-        tech_review_word_corpus = list(
-            tqdm(p.imap(parseReview, zip(co_reviews, indices)), total=len(co_reviews)))
+        tech_review_word_corpus = list(tqdm(p.imap(parseReview, zip(co_reviews, indices)), total=len(co_reviews)))
+
 
     print("Original Review\n", [review for review,
                                 i in zip(co_reviews, indices) if i == 119065])
@@ -216,3 +222,4 @@ if __name__ == "__main__":
     sentences = [item.split() for sublist in all_review_sent_corpus for item in sublist[1]]
     model = Word2Vec(sentences, size=200, window=10, min_count=5, workers=num_cpus)
     model.save(os.path.join(project_path, "models/w2v_embedding"))
+

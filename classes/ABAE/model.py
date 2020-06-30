@@ -68,10 +68,10 @@ def create_model(overall_maxlen, vocab, aspect_size, neg_size, emb_reader, ortho
     model = Model(inputs=[sentence_input, neg_input], outputs=[loss])
 
     ### Word embedding and aspect embedding initialization ######
-    print('Initializing word embedding matrix')
+    # print('Initializing word embedding matrix')
     embs = model.get_layer('word_emb').embeddings
     K.set_value(embs, emb_reader.get_emb_matrix_given_vocab(vocab, K.get_value(embs)))
-    print('Initializing aspect embedding matrix as centroid of kmean clusters')
+    # print('Initializing aspect embedding matrix as centroid of kmean clusters')
     K.set_value(model.get_layer('aspect_emb').W, aspect_matrix)
 
     return model

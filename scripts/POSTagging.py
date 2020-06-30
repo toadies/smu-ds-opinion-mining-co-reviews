@@ -15,8 +15,6 @@ if __name__ == "__main__":
         tech_review_corpus = pickle.load(f)
     reviews = pd.DataFrame(tech_review_corpus).review.tolist()
 
-    
-
     with Pool() as p:
         print("Split Words")
         reviews_pos = list(tqdm(p.imap(str.split, reviews), total=len(reviews)))
