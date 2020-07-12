@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+    
+<div class="row">
+    <div class="col-sm">
+        <p>Please read the review and label what best gives theme of the review.</p>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-primary alert-dismissible fade show" role="alert">
+            {{ message }}       
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm">
+        <form action="" method="post" novalidate>
+            {{ form.csrf_token() }}
+            {{ form.id(value=review.id) }}
+            <div class="row form-group">
+                {{ form.topic.label(class_="col-sm-2") }}<br>
+                <div class="col-sm-3">
+                    {{ form.topic(class_="form-control") }}
+                </div>
+                <div class="col-sm-1">
+                    <p>{{ form.submit(class_="btn btn-primary") }}</p>
+                </div>
+            </div>
+            <div class="row"> 
+                <div class="col-sm-6 border border-primary">
+                    <!-- <p><i>{{ review.index }}</i></p> -->
+                    <p>{{ review.review }}</p>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
