@@ -11,7 +11,7 @@ if project_path not in sys.path:
     sys.path.append(project_path+"/webapp")
 
 from app import db
-from app.models import Review
+from app.models import Review, Sentence
 
 if __name__ == "__main__":
     
@@ -30,5 +30,23 @@ if __name__ == "__main__":
             lda_topic_name=row["lda_topic_name"]
         )
         db.session.add(r)
+
+    db.session.commit()
+
+    indics = X_test["index"].tolist()
+
+    final_review_sentence_topics = pd.read_csv("../data/final_review_sentence_topics.csv")
+
+    idx = final_review_sentence_topics["index"].isin(indics)
+    sent_test = final_review_sentence_topics.loc[idx,:]
+
+    for i, row in sent_test.iterrows():
+        s = Sentence(
+            index=int(row["index"]),
+            review=row["review"],
+            abae_topic_label=int(row["abae_topic_label"]),
+            abae_topic_name=row["abae_topic_name"]
+        )
+        db.session.add(s)
 
     db.session.commit()

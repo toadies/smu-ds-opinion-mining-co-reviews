@@ -20,7 +20,7 @@
     <div class="col-sm">
         <form action="" method="post" novalidate>
             {{ form.csrf_token() }}
-            {{ form.id(value=review.id) }}
+            {{ form.id(value=sentence.id) }}
             <div class="row form-group">
                 {{ form.topic_primary.label(class_="col-sm-3") }}<br>
                 <div class="col-sm-3">
@@ -41,8 +41,8 @@
             </div>
             <div class="row"> 
                 <div class="col-sm-6 border border-primary">
-                    <p>Review <i>{{ review.id }}</i></p>
-                    <p>{{ review.review }}</p>
+                    <p>Sentence <i>{{ sentence.id }}</i></p>
+                    <p>{{ sentence.review }}</p>
                 </div>
             </div>
         </form>
